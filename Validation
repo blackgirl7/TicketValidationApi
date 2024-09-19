@@ -1,0 +1,95 @@
+// models/ticket.js
+const mongoose = require('mongoose');
+
+const ticketSchema = new mongoose.Schema({
+    eventId: { type: String, required: true },
+    userId: { type: String, required: true },
+    ticketCode: { type: String, unique: true, required: true },
+    valid: { type: Boolean, default: true },
+    dateIssued: { type: Date, default: Date.now }
+});
+
+module.exports = mongoose.model('Ticket', ticketSchema);
+
+const express = require('express');
+const router = express.Router();
+const Ticket = require('../models/ticket');
+const { v4: uuidv4 } = require('uuid');
+
+// Create a new ticket for an event
+router.post('/create', async (req, res) => {
+    const { eventId, userId } = req.body;
+
+    const ticket = new Ticket({
+        eventId,
+        userId,// Validate a ticket by ticketCode
+router.post('/validate', async (req, res) => {
+    const { ticketCode } = req.body;
+
+    try {
+        const ticket = await Ticket.findOne({ ticketCode });
+        if (!ticket) {
+            return res.status(404).json({ error: 'Ticket not found' });
+        }
+
+        if (!ticket.valid) {
+            return res.status(400).json({ error: 'Ticket has already been used or is invalid' });
+        }
+
+        // Mark ticket as used
+        ticket.valid = false;
+        await ticket.save();
+
+        res.status(200).json({ message: 'Ticket validated successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error validating ticket' });
+    }
+});
+
+        ticketCode: uuidv4(),  // Generates a unique code for the ticket
+    });
+
+    try {
+        await ticket.save();
+        res.status(201).json({ ticket });
+    } catch (error) {
+        res.status(500).json({ error: 'Error creating ticket' });
+    }
+});
+
+// Get all tickets for an event
+router.get('/event/:eventId', async (req, res) => {
+    const { eventId } = req.params;
+
+    try {
+        const tickets = await Ticket.find({ eventId });
+        res.status(200).json({ tickets });
+    } catch (error) {
+        res.status(500).json({ error: 'Error retrieving tickets' });
+    }
+});
+const express = require('express');
+const mongoose = require('mongoose');
+const ticketRoutes = require('./routes/tickets');
+
+const app = express();
+app.use(express.json());
+app.use('/api/tickets', ticketRoutes);
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/ticket-validation', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => {
+    console.log('Connected to MongoDB');
+}).catch((error) => {
+    console.log('MongoDB connection error:', error);
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
+
